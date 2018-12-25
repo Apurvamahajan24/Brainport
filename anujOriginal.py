@@ -1,3 +1,4 @@
+
 """
 Created on Thu May  4 23:32:34 2017
 @author: anuj shah
@@ -29,43 +30,26 @@ data_dir_list = os.listdir(data_path)
 img_rows=128
 img_cols=128
 num_channel=1
-num_epoch=20
+num_epoch=5
 
 # Define the number of classes
 num_classes = 4
 
-#labels_name={'cats':0,'dogs':1,'horses':2,'humans':3}
-labels_name={'apple':0,'football':1}
-
 img_data_list=[]
-labels_list = []
 
 for dataset in data_dir_list:
 	img_list=os.listdir(data_path+'/'+ dataset)
-	print ('Loading the images of dataset-'+'{}\n'.format(dataset))
-	label = labels_name[dataset]
+	print ('Loaded the images of dataset-'+'{}\n'.format(dataset))
 	for img in img_list:
 		input_img=cv2.imread(data_path + '/'+ dataset + '/'+ img )
 		input_img=cv2.cvtColor(input_img, cv2.COLOR_BGR2GRAY)
-		input_img_resize=cv2.resize((input_img),(128,128))
+		input_img_resize=cv2.resize(input_img,(128,128))
 		img_data_list.append(input_img_resize)
-		labels_list.append(label)
 
 img_data = np.array(img_data_list)
 img_data = img_data.astype('float32')
 img_data /= 255
 print (img_data.shape)
-
-labels = np.array(labels_list)
-# print the count of number of samples for different classes
-print(np.unique(labels,return_counts=True))
-# convert class labels to on-hot encoding
-Y = np_utils.to_categorical(labels, num_classes)
-
-#Shuffle the dataset
-x,y = shuffle(img_data,Y, random_state=2)
-# Split the dataset
-X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2)
 
 if num_channel==1:
 	if K.image_dim_ordering()=='th':
@@ -133,6 +117,29 @@ if USE_SKLEARN_PREPROCESSING:
 
 if USE_SKLEARN_PREPROCESSING:
 	img_data=img_data_scaled
+#%%
+# Assigning Labels
+
+# Define the number of classes
+num_classes = 4
+
+num_of_samples = img_data.shape[0]
+labels = np.ones((num_of_samples,),dtype='int64')
+
+labels[0:202]=0
+labels[202:404]=1
+labels[404:606]=2
+labels[606:]=3
+
+names = ['cats','dogs','horses','humans']
+
+# convert class labels to on-hot encoding
+Y = np_utils.to_categorical(labels, num_classes)
+
+#Shuffle the dataset
+x,y = shuffle(img_data,Y, random_state=2)
+# Split the dataset
+X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2)
 
 #%%
 # Defining the model
@@ -169,7 +176,6 @@ model.compile(loss='categorical_crossentropy', optimizer='rmsprop',metrics=["acc
 
 model.summary()
 model.get_config()
-print(1000)
 model.layers[0].get_config()
 model.layers[0].input_shape
 model.layers[0].output_shape
@@ -179,7 +185,7 @@ model.layers[0].trainable
 
 #%%
 # Training
-hist = model.fit(X_train, y_train, batch_size=16, nb_epoch=num_epoch, verbose=1, validation_data=( X_test, y_test))
+hist = model.fit(X_train, y_train, batch_size=16, nb_epoch=num_epoch, verbose=1, validation_data=(X_test, y_test))
 
 #hist = model.fit(X_train, y_train, batch_size=32, nb_epoch=20,verbose=1, validation_split=0.2)
 
@@ -205,7 +211,7 @@ train_loss=hist.history['loss']
 val_loss=hist.history['val_loss']
 train_acc=hist.history['acc']
 val_acc=hist.history['val_acc']
-xc=range(num_epoch)
+xc=np.array(range(num_epoch))
 
 plt.figure(1,figsize=(7,5))
 plt.plot(xc,train_loss)
